@@ -1,0 +1,434 @@
+                                      1 ;--------------------------------------------------------
+                                      2 ; File Created by SDCC : free open source ANSI-C Compiler
+                                      3 ; Version 4.2.0 #13081 (Linux)
+                                      4 ;--------------------------------------------------------
+                                      5 	.module nec
+                                      6 	.optsdcc -mstm8
+                                      7 	
+                                      8 ;--------------------------------------------------------
+                                      9 ; Public variables in this module
+                                     10 ;--------------------------------------------------------
+                                     11 	.globl _TIM2_Update_IRQHandler
+                                     12 	.globl _EXTI_PORTD_IRQHandler
+                                     13 	.globl _printf
+                                     14 	.globl _nec_init
+                                     15 	.globl _nec_data_ready
+                                     16 	.globl _nec_get_data
+                                     17 ;--------------------------------------------------------
+                                     18 ; ram data
+                                     19 ;--------------------------------------------------------
+                                     20 	.area DATA
+                                     21 ;--------------------------------------------------------
+                                     22 ; ram data
+                                     23 ;--------------------------------------------------------
+                                     24 	.area INITIALIZED
+      000000                         25 _ir_state:
+      000000                         26 	.ds 1
+      000001                         27 _ir_data:
+      000001                         28 	.ds 4
+      000005                         29 _ir_bit_count:
+      000005                         30 	.ds 1
+      000006                         31 _ir_data_ready_flag:
+      000006                         32 	.ds 1
+                                     33 ;--------------------------------------------------------
+                                     34 ; absolute external ram data
+                                     35 ;--------------------------------------------------------
+                                     36 	.area DABS (ABS)
+                                     37 
+                                     38 ; default segment ordering for linker
+                                     39 	.area HOME
+                                     40 	.area GSINIT
+                                     41 	.area GSFINAL
+                                     42 	.area CONST
+                                     43 	.area INITIALIZER
+                                     44 	.area CODE
+                                     45 
+                                     46 ;--------------------------------------------------------
+                                     47 ; global & static initialisations
+                                     48 ;--------------------------------------------------------
+                                     49 	.area HOME
+                                     50 	.area GSINIT
+                                     51 	.area GSFINAL
+                                     52 	.area GSINIT
+                                     53 ;--------------------------------------------------------
+                                     54 ; Home
+                                     55 ;--------------------------------------------------------
+                                     56 	.area HOME
+                                     57 	.area HOME
+                                     58 ;--------------------------------------------------------
+                                     59 ; code
+                                     60 ;--------------------------------------------------------
+                                     61 	.area CODE
+                                     62 ;	src/nec.c: 44: void nec_init(void) {
+                                     63 ;	-----------------------------------------
+                                     64 ;	 function nec_init
+                                     65 ;	-----------------------------------------
+      000000                         66 _nec_init:
+                                     67 ;	src/nec.c: 45: ir_gpio_init();
+      000000 CDr00r59         [ 4]   68 	call	_ir_gpio_init
+                                     69 ;	src/nec.c: 46: tim2_init();
+                                     70 ;	src/nec.c: 47: }
+      000003 CCr00r4C         [ 2]   71 	jp	_tim2_init
+                                     72 ;	src/nec.c: 49: uint8_t nec_data_ready(void) {
+                                     73 ;	-----------------------------------------
+                                     74 ;	 function nec_data_ready
+                                     75 ;	-----------------------------------------
+      000006                         76 _nec_data_ready:
+                                     77 ;	src/nec.c: 50: return ir_data_ready_flag;
+      000006 C6u00u06         [ 1]   78 	ld	a, _ir_data_ready_flag+0
+                                     79 ;	src/nec.c: 51: }
+      000009 81               [ 4]   80 	ret
+                                     81 ;	src/nec.c: 53: uint8_t nec_get_data(nec_decoded_data_t *data) {
+                                     82 ;	-----------------------------------------
+                                     83 ;	 function nec_get_data
+                                     84 ;	-----------------------------------------
+      00000A                         85 _nec_get_data:
+      00000A 52 06            [ 2]   86 	sub	sp, #6
+      00000C 1F 05            [ 2]   87 	ldw	(0x05, sp), x
+                                     88 ;	src/nec.c: 54: if (!ir_data_ready_flag) {
+      00000E 72 5Du00u06      [ 1]   89 	tnz	_ir_data_ready_flag+0
+      000012 26 03            [ 1]   90 	jrne	00102$
+                                     91 ;	src/nec.c: 55: return 0; // No new data available
+      000014 4F               [ 1]   92 	clr	a
+      000015 20 32            [ 2]   93 	jra	00103$
+      000017                         94 00102$:
+                                     95 ;	src/nec.c: 58: __asm__("sim"); // Disable interrupts to safely copy data
+      000017 9B               [ 1]   96 	sim
+                                     97 ;	src/nec.c: 59: data->raw_data = ir_data;
+      000018 1E 05            [ 2]   98 	ldw	x, (0x05, sp)
+      00001A 5C               [ 1]   99 	incw	x
+      00001B 5C               [ 1]  100 	incw	x
+      00001C 90 CEu00u03      [ 2]  101 	ldw	y, _ir_data+2
+      000020 EF 02            [ 2]  102 	ldw	(0x2, x), y
+      000022 90 CEu00u01      [ 2]  103 	ldw	y, _ir_data+0
+      000026 FF               [ 2]  104 	ldw	(x), y
+                                    105 ;	src/nec.c: 60: ir_data_ready_flag = 0; // Clear the flag
+      000027 72 5Fu00u06      [ 1]  106 	clr	_ir_data_ready_flag+0
+                                    107 ;	src/nec.c: 61: __asm__("rim"); // Re-enable interrupts
+      00002B 9A               [ 1]  108 	rim
+                                    109 ;	src/nec.c: 64: data->address = (data->raw_data >> 24) & 0xFF;
+      00002C 90 93            [ 1]  110 	ldw	y, x
+      00002E 90 EE 02         [ 2]  111 	ldw	y, (0x2, y)
+      000031 E6 01            [ 1]  112 	ld	a, (0x1, x)
+      000033 6B 02            [ 1]  113 	ld	(0x02, sp), a
+      000035 F6               [ 1]  114 	ld	a, (x)
+      000036 16 05            [ 2]  115 	ldw	y, (0x05, sp)
+      000038 90 F7            [ 1]  116 	ld	(y), a
+                                    117 ;	src/nec.c: 65: data->command = (data->raw_data >> 8) & 0xFF;
+      00003A 16 05            [ 2]  118 	ldw	y, (0x05, sp)
+      00003C 90 5C            [ 1]  119 	incw	y
+      00003E E6 03            [ 1]  120 	ld	a, (0x3, x)
+      000040 6B 04            [ 1]  121 	ld	(0x04, sp), a
+      000042 E6 02            [ 1]  122 	ld	a, (0x2, x)
+      000044 FE               [ 2]  123 	ldw	x, (x)
+      000045 90 F7            [ 1]  124 	ld	(y), a
+                                    125 ;	src/nec.c: 67: return 1; // Indicate success
+      000047 A6 01            [ 1]  126 	ld	a, #0x01
+      000049                        127 00103$:
+                                    128 ;	src/nec.c: 68: }
+      000049 5B 06            [ 2]  129 	addw	sp, #6
+      00004B 81               [ 4]  130 	ret
+                                    131 ;	src/nec.c: 72: static void tim2_init(void) {
+                                    132 ;	-----------------------------------------
+                                    133 ;	 function tim2_init
+                                    134 ;	-----------------------------------------
+      00004C                        135 _tim2_init:
+                                    136 ;	src/nec.c: 73: CLK->PCKENR1 |= (1 << 5); // Enable TIM2 clock
+      00004C 72 1A 50 C7      [ 1]  137 	bset	0x50c7, #5
+                                    138 ;	src/nec.c: 74: TIM2->PSCR = 0x04;        // Prescaler = 16 (16MHz/16 -> 1us tick)
+      000050 35 04 53 0E      [ 1]  139 	mov	0x530e+0, #0x04
+                                    140 ;	src/nec.c: 75: TIM2->IER |= (1 << 0);    // Enable Update Interrupt for timeouts
+      000054 72 10 53 03      [ 1]  141 	bset	0x5303, #0
+                                    142 ;	src/nec.c: 76: }
+      000058 81               [ 4]  143 	ret
+                                    144 ;	src/nec.c: 78: static void ir_gpio_init(void) {
+                                    145 ;	-----------------------------------------
+                                    146 ;	 function ir_gpio_init
+                                    147 ;	-----------------------------------------
+      000059                        148 _ir_gpio_init:
+                                    149 ;	src/nec.c: 79: IR_PORT->DDR &= ~IR_PIN_MASK; // Set as input
+      000059 72 17 50 11      [ 1]  150 	bres	0x5011, #3
+                                    151 ;	src/nec.c: 80: IR_PORT->CR1 |= IR_PIN_MASK;  // Enable pull-up resistor
+      00005D 72 16 50 12      [ 1]  152 	bset	0x5012, #3
+                                    153 ;	src/nec.c: 81: IR_PORT->CR2 |= IR_PIN_MASK;  // Enable external interrupt for the pin
+      000061 C6 50 13         [ 1]  154 	ld	a, 0x5013
+      000064 AA 08            [ 1]  155 	or	a, #0x08
+      000066 C7 50 13         [ 1]  156 	ld	0x5013, a
+                                    157 ;	src/nec.c: 84: EXTI->CR1 &= ~(3 << 6); // Clear bits 7 and 6
+      000069 C6 50 A0         [ 1]  158 	ld	a, 0x50a0
+      00006C A4 3F            [ 1]  159 	and	a, #0x3f
+      00006E C7 50 A0         [ 1]  160 	ld	0x50a0, a
+                                    161 ;	src/nec.c: 85: EXTI->CR1 |= (2 << 6);  // Set bits for falling edge
+      000071 72 1E 50 A0      [ 1]  162 	bset	0x50a0, #7
+                                    163 ;	src/nec.c: 86: }
+      000075 81               [ 4]  164 	ret
+                                    165 ;	src/nec.c: 90: void EXTI_PORTD_IRQHandler(void) __interrupt(6) {
+                                    166 ;	-----------------------------------------
+                                    167 ;	 function EXTI_PORTD_IRQHandler
+                                    168 ;	-----------------------------------------
+      000076                        169 _EXTI_PORTD_IRQHandler:
+      000076 4F               [ 1]  170 	clr	a
+      000077 62               [ 2]  171 	div	x, a
+      000078 52 04            [ 2]  172 	sub	sp, #4
+                                    173 ;	src/nec.c: 91: uint16_t pulse_width = (TIM2->CNTRH << 8) | TIM2->CNTRL;
+      00007A C6 53 0C         [ 1]  174 	ld	a, 0x530c
+      00007D 95               [ 1]  175 	ld	xh, a
+      00007E 0F 02            [ 1]  176 	clr	(0x02, sp)
+      000080 C6 53 0D         [ 1]  177 	ld	a, 0x530d
+      000083 0F 03            [ 1]  178 	clr	(0x03, sp)
+      000085 1A 02            [ 1]  179 	or	a, (0x02, sp)
+      000087 02               [ 1]  180 	rlwa	x
+      000088 1A 03            [ 1]  181 	or	a, (0x03, sp)
+      00008A 95               [ 1]  182 	ld	xh, a
+      00008B 1F 03            [ 2]  183 	ldw	(0x03, sp), x
+                                    184 ;	src/nec.c: 92: TIM2->CNTRH = 0;
+      00008D 35 00 53 0C      [ 1]  185 	mov	0x530c+0, #0x00
+                                    186 ;	src/nec.c: 93: TIM2->CNTRL = 0;
+      000091 35 00 53 0D      [ 1]  187 	mov	0x530d+0, #0x00
+                                    188 ;	src/nec.c: 95: switch (ir_state) {
+      000095 C6u00u00         [ 1]  189 	ld	a, _ir_state+0
+      000098 A1 04            [ 1]  190 	cp	a, #0x04
+      00009A 23 03            [ 2]  191 	jrule	00186$
+      00009C CCr01rBD         [ 2]  192 	jp	00129$
+      00009F                        193 00186$:
+                                    194 ;	src/nec.c: 104: if (pulse_width > NEC_START_PULSE_MIN && pulse_width < NEC_START_PULSE_MAX) {
+      00009F 16 03            [ 2]  195 	ldw	y, (0x03, sp)
+                                    196 ;	src/nec.c: 95: switch (ir_state) {
+      0000A1 5F               [ 1]  197 	clrw	x
+      0000A2 97               [ 1]  198 	ld	xl, a
+      0000A3 58               [ 2]  199 	sllw	x
+      0000A4 DEu00uA8         [ 2]  200 	ldw	x, (#00187$, x)
+      0000A7 FC               [ 2]  201 	jp	(x)
+      0000A8                        202 00187$:
+      0000A8r00rB2                  203 	.dw	#00101$
+      0000AAr00rD1                  204 	.dw	#00102$
+      0000ACr00rF4                  205 	.dw	#00107$
+      0000AEr01r22                  206 	.dw	#00112$
+      0000B0r01r44                  207 	.dw	#00117$
+                                    208 ;	src/nec.c: 96: case STATE_IDLE:
+      0000B2                        209 00101$:
+                                    210 ;	src/nec.c: 97: TIM2->CR1 |= (1 << 0);      // Start timer
+      0000B2 C6 53 00         [ 1]  211 	ld	a, 0x5300
+      0000B5 AA 01            [ 1]  212 	or	a, #0x01
+      0000B7 C7 53 00         [ 1]  213 	ld	0x5300, a
+                                    214 ;	src/nec.c: 98: ir_state = STATE_START_PULSE;
+      0000BA 35 01u00u00      [ 1]  215 	mov	_ir_state+0, #0x01
+                                    216 ;	src/nec.c: 99: EXTI->CR1 &= ~(3 << 6);       // Clear bits
+      0000BE C6 50 A0         [ 1]  217 	ld	a, 0x50a0
+      0000C1 A4 3F            [ 1]  218 	and	a, #0x3f
+      0000C3 C7 50 A0         [ 1]  219 	ld	0x50a0, a
+                                    220 ;	src/nec.c: 100: EXTI->CR1 |= (3 << 6);        // Reconfigure to trigger on both edges
+      0000C6 C6 50 A0         [ 1]  221 	ld	a, 0x50a0
+      0000C9 AA C0            [ 1]  222 	or	a, #0xc0
+      0000CB C7 50 A0         [ 1]  223 	ld	0x50a0, a
+                                    224 ;	src/nec.c: 101: break;
+      0000CE CCr01rBD         [ 2]  225 	jp	00129$
+                                    226 ;	src/nec.c: 103: case STATE_START_PULSE:
+      0000D1                        227 00102$:
+                                    228 ;	src/nec.c: 104: if (pulse_width > NEC_START_PULSE_MIN && pulse_width < NEC_START_PULSE_MAX) {
+      0000D1 90 A3 1D 4C      [ 2]  229 	cpw	y, #0x1d4c
+      0000D5 23 0D            [ 2]  230 	jrule	00104$
+      0000D7 90 A3 29 04      [ 2]  231 	cpw	y, #0x2904
+      0000DB 24 07            [ 1]  232 	jrnc	00104$
+                                    233 ;	src/nec.c: 105: ir_state = STATE_START_SPACE;
+      0000DD 35 02u00u00      [ 1]  234 	mov	_ir_state+0, #0x02
+      0000E1 CCr01rBD         [ 2]  235 	jp	00129$
+      0000E4                        236 00104$:
+                                    237 ;	src/nec.c: 107: ir_state = STATE_IDLE;
+      0000E4 72 5Fu00u00      [ 1]  238 	clr	_ir_state+0
+                                    239 ;	src/nec.c: 108: printf("E1 "); // Error: Bad start pulse timing
+      0000E8 4Br00            [ 1]  240 	push	#<(___str_0+0)
+      0000EA 4Bs00            [ 1]  241 	push	#((___str_0+0) >> 8)
+      0000EC CDr00r00         [ 4]  242 	call	_printf
+      0000EF 5B 02            [ 2]  243 	addw	sp, #2
+                                    244 ;	src/nec.c: 110: break;
+      0000F1 CCr01rBD         [ 2]  245 	jp	00129$
+                                    246 ;	src/nec.c: 112: case STATE_START_SPACE:
+      0000F4                        247 00107$:
+                                    248 ;	src/nec.c: 113: if (pulse_width > NEC_START_SPACE_MIN && pulse_width < NEC_START_SPACE_MAX) {
+      0000F4 90 A3 0D AC      [ 2]  249 	cpw	y, #0x0dac
+      0000F8 23 18            [ 2]  250 	jrule	00109$
+      0000FA 90 A3 15 7C      [ 2]  251 	cpw	y, #0x157c
+      0000FE 24 12            [ 1]  252 	jrnc	00109$
+                                    253 ;	src/nec.c: 114: ir_state = STATE_BIT_PULSE;
+      000100 35 03u00u00      [ 1]  254 	mov	_ir_state+0, #0x03
+                                    255 ;	src/nec.c: 115: ir_bit_count = 0;
+      000104 72 5Fu00u05      [ 1]  256 	clr	_ir_bit_count+0
+                                    257 ;	src/nec.c: 116: ir_data = 0;
+      000108 5F               [ 1]  258 	clrw	x
+      000109 CFu00u03         [ 2]  259 	ldw	_ir_data+2, x
+      00010C CFu00u01         [ 2]  260 	ldw	_ir_data+0, x
+      00010F CCr01rBD         [ 2]  261 	jp	00129$
+      000112                        262 00109$:
+                                    263 ;	src/nec.c: 118: ir_state = STATE_IDLE;
+      000112 72 5Fu00u00      [ 1]  264 	clr	_ir_state+0
+                                    265 ;	src/nec.c: 119: printf("E2 "); // Error: Bad start space timing
+      000116 4Br04            [ 1]  266 	push	#<(___str_1+0)
+      000118 4Bs00            [ 1]  267 	push	#((___str_1+0) >> 8)
+      00011A CDr00r00         [ 4]  268 	call	_printf
+      00011D 5B 02            [ 2]  269 	addw	sp, #2
+                                    270 ;	src/nec.c: 121: break;
+      00011F CCr01rBD         [ 2]  271 	jp	00129$
+                                    272 ;	src/nec.c: 123: case STATE_BIT_PULSE:
+      000122                        273 00112$:
+                                    274 ;	src/nec.c: 124: if (pulse_width > NEC_BIT_PULSE_MIN && pulse_width < NEC_BIT_PULSE_MAX) {
+      000122 90 A3 01 5E      [ 2]  275 	cpw	y, #0x015e
+      000126 23 0D            [ 2]  276 	jrule	00114$
+      000128 90 A3 03 20      [ 2]  277 	cpw	y, #0x0320
+      00012C 24 07            [ 1]  278 	jrnc	00114$
+                                    279 ;	src/nec.c: 125: ir_state = STATE_BIT_SPACE;
+      00012E 35 04u00u00      [ 1]  280 	mov	_ir_state+0, #0x04
+      000132 CCr01rBD         [ 2]  281 	jp	00129$
+      000135                        282 00114$:
+                                    283 ;	src/nec.c: 127: ir_state = STATE_IDLE;
+      000135 72 5Fu00u00      [ 1]  284 	clr	_ir_state+0
+                                    285 ;	src/nec.c: 128: printf("E3 "); // Error: Bad bit pulse timing
+      000139 4Br08            [ 1]  286 	push	#<(___str_2+0)
+      00013B 4Bs00            [ 1]  287 	push	#((___str_2+0) >> 8)
+      00013D CDr00r00         [ 4]  288 	call	_printf
+      000140 5B 02            [ 2]  289 	addw	sp, #2
+                                    290 ;	src/nec.c: 130: break;
+      000142 20 79            [ 2]  291 	jra	00129$
+                                    292 ;	src/nec.c: 132: case STATE_BIT_SPACE:
+      000144                        293 00117$:
+                                    294 ;	src/nec.c: 133: ir_data <<= 1; // Shift left to make room for the new bit (LSB first)
+      000144 72 58u00u04      [ 1]  295 	sll	_ir_data+3
+      000148 72 59u00u03      [ 1]  296 	rlc	_ir_data+2
+      00014C 72 59u00u02      [ 1]  297 	rlc	_ir_data+1
+      000150 72 59u00u01      [ 1]  298 	rlc	_ir_data+0
+                                    299 ;	src/nec.c: 134: if (pulse_width > NEC_LOGIC_1_SPACE_MIN && pulse_width < NEC_LOGIC_1_SPACE_MAX) {
+      000154 1E 03            [ 2]  300 	ldw	x, (0x03, sp)
+      000156 A3 05 78         [ 2]  301 	cpw	x, #0x0578
+      000159 23 1C            [ 2]  302 	jrule	00122$
+      00015B A3 07 6C         [ 2]  303 	cpw	x, #0x076c
+      00015E 24 17            [ 1]  304 	jrnc	00122$
+                                    305 ;	src/nec.c: 135: ir_data |= 1; // It's a '1'
+      000160 C6u00u04         [ 1]  306 	ld	a, _ir_data+3
+      000163 AA 01            [ 1]  307 	or	a, #0x01
+      000165 97               [ 1]  308 	ld	xl, a
+      000166 C6u00u03         [ 1]  309 	ld	a, _ir_data+2
+      000169 95               [ 1]  310 	ld	xh, a
+      00016A 90 CEu00u01      [ 2]  311 	ldw	y, _ir_data+0
+      00016E CFu00u03         [ 2]  312 	ldw	_ir_data+2, x
+      000171 90 CFu00u01      [ 2]  313 	ldw	_ir_data+0, y
+      000175 20 19            [ 2]  314 	jra	00123$
+      000177                        315 00122$:
+                                    316 ;	src/nec.c: 136: } else if (!(pulse_width > NEC_LOGIC_0_SPACE_MIN && pulse_width < NEC_LOGIC_0_SPACE_MAX)) {
+      000177 A3 01 5E         [ 2]  317 	cpw	x, #0x015e
+      00017A 23 05            [ 2]  318 	jrule	00118$
+      00017C A3 03 20         [ 2]  319 	cpw	x, #0x0320
+      00017F 25 0F            [ 1]  320 	jrc	00123$
+      000181                        321 00118$:
+                                    322 ;	src/nec.c: 137: ir_state = STATE_IDLE; // Pulse width error
+      000181 72 5Fu00u00      [ 1]  323 	clr	_ir_state+0
+                                    324 ;	src/nec.c: 138: printf("E4 "); // Error: Bad bit space timing
+      000185 4Br0C            [ 1]  325 	push	#<(___str_3+0)
+      000187 4Bs00            [ 1]  326 	push	#((___str_3+0) >> 8)
+      000189 CDr00r00         [ 4]  327 	call	_printf
+      00018C 5B 02            [ 2]  328 	addw	sp, #2
+                                    329 ;	src/nec.c: 139: break;
+      00018E 20 2D            [ 2]  330 	jra	00129$
+      000190                        331 00123$:
+                                    332 ;	src/nec.c: 141: ir_bit_count++;
+      000190 72 5Cu00u05      [ 1]  333 	inc	_ir_bit_count+0
+                                    334 ;	src/nec.c: 142: if (ir_bit_count == 32) {
+      000194 C6u00u05         [ 1]  335 	ld	a, _ir_bit_count+0
+      000197 A1 20            [ 1]  336 	cp	a, #0x20
+      000199 26 1E            [ 1]  337 	jrne	00126$
+                                    338 ;	src/nec.c: 143: ir_data_ready_flag = 1; // Set flag for main loop
+      00019B 35 01u00u06      [ 1]  339 	mov	_ir_data_ready_flag+0, #0x01
+                                    340 ;	src/nec.c: 144: ir_state = STATE_IDLE;
+      00019F 72 5Fu00u00      [ 1]  341 	clr	_ir_state+0
+                                    342 ;	src/nec.c: 145: TIM2->CR1 &= ~(1 << 0); // Stop timer
+      0001A3 C6 53 00         [ 1]  343 	ld	a, 0x5300
+      0001A6 A4 FE            [ 1]  344 	and	a, #0xfe
+      0001A8 C7 53 00         [ 1]  345 	ld	0x5300, a
+                                    346 ;	src/nec.c: 146: EXTI->CR1 &= ~(3 << 6);   // Clear bits
+      0001AB C6 50 A0         [ 1]  347 	ld	a, 0x50a0
+      0001AE A4 3F            [ 1]  348 	and	a, #0x3f
+      0001B0 C7 50 A0         [ 1]  349 	ld	0x50a0, a
+                                    350 ;	src/nec.c: 147: EXTI->CR1 |= (2 << 6);    // Reset EXTI to falling edge only
+      0001B3 72 1E 50 A0      [ 1]  351 	bset	0x50a0, #7
+      0001B7 20 04            [ 2]  352 	jra	00129$
+      0001B9                        353 00126$:
+                                    354 ;	src/nec.c: 149: ir_state = STATE_BIT_PULSE;
+      0001B9 35 03u00u00      [ 1]  355 	mov	_ir_state+0, #0x03
+                                    356 ;	src/nec.c: 152: }
+      0001BD                        357 00129$:
+                                    358 ;	src/nec.c: 153: }
+      0001BD 5B 04            [ 2]  359 	addw	sp, #4
+      0001BF 80               [11]  360 	iret
+                                    361 ;	src/nec.c: 155: void TIM2_Update_IRQHandler(void) __interrupt(13) {
+                                    362 ;	-----------------------------------------
+                                    363 ;	 function TIM2_Update_IRQHandler
+                                    364 ;	-----------------------------------------
+      0001C0                        365 _TIM2_Update_IRQHandler:
+      0001C0 4F               [ 1]  366 	clr	a
+      0001C1 62               [ 2]  367 	div	x, a
+                                    368 ;	src/nec.c: 156: if (TIM2->SR1 & (1 << 0)) { // Check for update interrupt flag
+      0001C2 C6 53 04         [ 1]  369 	ld	a, 0x5304
+      0001C5 44               [ 1]  370 	srl	a
+      0001C6 24 2A            [ 1]  371 	jrnc	00105$
+                                    372 ;	src/nec.c: 157: if(ir_state != STATE_IDLE) {
+      0001C8 C6u00u00         [ 1]  373 	ld	a, _ir_state+0
+      0001CB 27 0D            [ 1]  374 	jreq	00102$
+                                    375 ;	src/nec.c: 159: ir_state = STATE_IDLE;
+      0001CD 72 5Fu00u00      [ 1]  376 	clr	_ir_state+0
+                                    377 ;	src/nec.c: 160: printf("T "); // Timed out
+      0001D1 4Br10            [ 1]  378 	push	#<(___str_4+0)
+      0001D3 4Bs00            [ 1]  379 	push	#((___str_4+0) >> 8)
+      0001D5 CDr00r00         [ 4]  380 	call	_printf
+      0001D8 5B 02            [ 2]  381 	addw	sp, #2
+      0001DA                        382 00102$:
+                                    383 ;	src/nec.c: 162: TIM2->CR1 &= ~(1 << 0); // Stop timer
+      0001DA C6 53 00         [ 1]  384 	ld	a, 0x5300
+      0001DD A4 FE            [ 1]  385 	and	a, #0xfe
+      0001DF C7 53 00         [ 1]  386 	ld	0x5300, a
+                                    387 ;	src/nec.c: 163: EXTI->CR1 &= ~(3 << 6);   // Clear bits
+      0001E2 C6 50 A0         [ 1]  388 	ld	a, 0x50a0
+      0001E5 A4 3F            [ 1]  389 	and	a, #0x3f
+      0001E7 C7 50 A0         [ 1]  390 	ld	0x50a0, a
+                                    391 ;	src/nec.c: 164: EXTI->CR1 |= (2 << 6);    // Reset EXTI to falling edge only
+      0001EA 72 1E 50 A0      [ 1]  392 	bset	0x50a0, #7
+                                    393 ;	src/nec.c: 165: TIM2->SR1 &= ~(1 << 0); // Clear the interrupt flag
+      0001EE 72 11 53 04      [ 1]  394 	bres	0x5304, #0
+      0001F2                        395 00105$:
+                                    396 ;	src/nec.c: 167: }
+      0001F2 80               [11]  397 	iret
+                                    398 	.area CODE
+                                    399 	.area CONST
+                                    400 	.area CONST
+      000000                        401 ___str_0:
+      000000 45 31 20               402 	.ascii "E1 "
+      000003 00                     403 	.db 0x00
+                                    404 	.area CODE
+                                    405 	.area CONST
+      000004                        406 ___str_1:
+      000004 45 32 20               407 	.ascii "E2 "
+      000007 00                     408 	.db 0x00
+                                    409 	.area CODE
+                                    410 	.area CONST
+      000008                        411 ___str_2:
+      000008 45 33 20               412 	.ascii "E3 "
+      00000B 00                     413 	.db 0x00
+                                    414 	.area CODE
+                                    415 	.area CONST
+      00000C                        416 ___str_3:
+      00000C 45 34 20               417 	.ascii "E4 "
+      00000F 00                     418 	.db 0x00
+                                    419 	.area CODE
+                                    420 	.area CONST
+      000010                        421 ___str_4:
+      000010 54 20                  422 	.ascii "T "
+      000012 00                     423 	.db 0x00
+                                    424 	.area CODE
+                                    425 	.area INITIALIZER
+      000000                        426 __xinit__ir_state:
+      000000 00                     427 	.db #0x00	; 0
+      000001                        428 __xinit__ir_data:
+      000001 00 00 00 00            429 	.byte #0x00, #0x00, #0x00, #0x00	; 0
+      000005                        430 __xinit__ir_bit_count:
+      000005 00                     431 	.db #0x00	; 0
+      000006                        432 __xinit__ir_data_ready_flag:
+      000006 00                     433 	.db #0x00	; 0
+                                    434 	.area CABS (ABS)

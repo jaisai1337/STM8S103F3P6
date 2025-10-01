@@ -1,0 +1,228 @@
+                                      1 ;--------------------------------------------------------
+                                      2 ; File Created by SDCC : free open source ANSI-C Compiler
+                                      3 ; Version 4.2.0 #13081 (Linux)
+                                      4 ;--------------------------------------------------------
+                                      5 	.module main
+                                      6 	.optsdcc -mstm8
+                                      7 	
+                                      8 ;--------------------------------------------------------
+                                      9 ; Public variables in this module
+                                     10 ;--------------------------------------------------------
+                                     11 	.globl _main
+                                     12 	.globl _nec_get_data
+                                     13 	.globl _nec_data_ready
+                                     14 	.globl _nec_init
+                                     15 	.globl _uart_init
+                                     16 	.globl _puts
+                                     17 	.globl _printf
+                                     18 ;--------------------------------------------------------
+                                     19 ; ram data
+                                     20 ;--------------------------------------------------------
+                                     21 	.area DATA
+                                     22 ;--------------------------------------------------------
+                                     23 ; ram data
+                                     24 ;--------------------------------------------------------
+                                     25 	.area INITIALIZED
+                                     26 ;--------------------------------------------------------
+                                     27 ; Stack segment in internal ram
+                                     28 ;--------------------------------------------------------
+                                     29 	.area	SSEG
+      000000                         30 __start__stack:
+      000000                         31 	.ds	1
+                                     32 
+                                     33 ;--------------------------------------------------------
+                                     34 ; absolute external ram data
+                                     35 ;--------------------------------------------------------
+                                     36 	.area DABS (ABS)
+                                     37 
+                                     38 ; default segment ordering for linker
+                                     39 	.area HOME
+                                     40 	.area GSINIT
+                                     41 	.area GSFINAL
+                                     42 	.area CONST
+                                     43 	.area INITIALIZER
+                                     44 	.area CODE
+                                     45 
+                                     46 ;--------------------------------------------------------
+                                     47 ; interrupt vector
+                                     48 ;--------------------------------------------------------
+                                     49 	.area HOME
+      000000                         50 __interrupt_vect:
+      000000 82v00u00u00             51 	int s_GSINIT ; reset
+      000004 82 00 00 00             52 	int 0x000000 ; trap
+      000008 82 00 00 00             53 	int 0x000000 ; int0
+      00000C 82 00 00 00             54 	int 0x000000 ; int1
+      000010 82 00 00 00             55 	int 0x000000 ; int2
+      000014 82 00 00 00             56 	int 0x000000 ; int3
+      000018 82 00 00 00             57 	int 0x000000 ; int4
+      00001C 82 00 00 00             58 	int 0x000000 ; int5
+      000020 82v00u00u00             59 	int _EXTI_PORTD_IRQHandler ; int6
+      000024 82 00 00 00             60 	int 0x000000 ; int7
+      000028 82 00 00 00             61 	int 0x000000 ; int8
+      00002C 82 00 00 00             62 	int 0x000000 ; int9
+      000030 82 00 00 00             63 	int 0x000000 ; int10
+      000034 82 00 00 00             64 	int 0x000000 ; int11
+      000038 82 00 00 00             65 	int 0x000000 ; int12
+      00003C 82v00u00u00             66 	int _TIM2_Update_IRQHandler ; int13
+                                     67 ;--------------------------------------------------------
+                                     68 ; global & static initialisations
+                                     69 ;--------------------------------------------------------
+                                     70 	.area HOME
+                                     71 	.area GSINIT
+                                     72 	.area GSFINAL
+                                     73 	.area GSINIT
+      000000                         74 __sdcc_init_data:
+                                     75 ; stm8_genXINIT() start
+      000000 AEr00r00         [ 2]   76 	ldw x, #l_DATA
+      000003 27 07            [ 1]   77 	jreq	00002$
+      000005                         78 00001$:
+      000005 72 4FuFFuFF      [ 1]   79 	clr (s_DATA - 1, x)
+      000009 5A               [ 2]   80 	decw x
+      00000A 26 F9            [ 1]   81 	jrne	00001$
+      00000C                         82 00002$:
+      00000C AEr00r00         [ 2]   83 	ldw	x, #l_INITIALIZER
+      00000F 27 09            [ 1]   84 	jreq	00004$
+      000011                         85 00003$:
+      000011 D6uFFuFF         [ 1]   86 	ld	a, (s_INITIALIZER - 1, x)
+      000014 D7uFFuFF         [ 1]   87 	ld	(s_INITIALIZED - 1, x), a
+      000017 5A               [ 2]   88 	decw	x
+      000018 26 F7            [ 1]   89 	jrne	00003$
+      00001A                         90 00004$:
+                                     91 ; stm8_genXINIT() end
+                                     92 	.area GSFINAL
+      000000 CCr00r40         [ 2]   93 	jp	__sdcc_program_startup
+                                     94 ;--------------------------------------------------------
+                                     95 ; Home
+                                     96 ;--------------------------------------------------------
+                                     97 	.area HOME
+                                     98 	.area HOME
+      000040                         99 __sdcc_program_startup:
+      000040 CCr00r00         [ 2]  100 	jp	_main
+                                    101 ;	return from main will return to caller
+                                    102 ;--------------------------------------------------------
+                                    103 ; code
+                                    104 ;--------------------------------------------------------
+                                    105 	.area CODE
+                                    106 ;	src/main.c: 6: void main(void) {
+                                    107 ;	-----------------------------------------
+                                    108 ;	 function main
+                                    109 ;	-----------------------------------------
+      000000                        110 _main:
+      000000 52 0C            [ 2]  111 	sub	sp, #12
+                                    112 ;	src/main.c: 8: CLK->CKDIVR = 0x00;
+      000002 35 00 50 C6      [ 1]  113 	mov	0x50c6+0, #0x00
+                                    114 ;	src/main.c: 11: uart_init();
+      000006 CDr00r00         [ 4]  115 	call	_uart_init
+                                    116 ;	src/main.c: 12: nec_init();
+      000009 CDr00r00         [ 4]  117 	call	_nec_init
+                                    118 ;	src/main.c: 15: __asm__("rim");
+      00000C 9A               [ 1]  119 	rim
+                                    120 ;	src/main.c: 18: printf("-------------------------\n");
+      00000D AEr00r46         [ 2]  121 	ldw	x, #(___str_6+0)
+      000010 CDr00r00         [ 4]  122 	call	_puts
+                                    123 ;	src/main.c: 24: while (1) {
+      000013                        124 00110$:
+                                    125 ;	src/main.c: 26: if (nec_data_ready()) {
+      000013 CDr00r00         [ 4]  126 	call	_nec_data_ready
+      000016 4D               [ 1]  127 	tnz	a
+      000017 27 FA            [ 1]  128 	jreq	00110$
+                                    129 ;	src/main.c: 29: if (nec_get_data(&ir_code)) {
+      000019 96               [ 1]  130 	ldw	x, sp
+      00001A 5C               [ 1]  131 	incw	x
+      00001B CDr00r00         [ 4]  132 	call	_nec_get_data
+      00001E 4D               [ 1]  133 	tnz	a
+      00001F 27 F2            [ 1]  134 	jreq	00110$
+                                    135 ;	src/main.c: 32: uint8_t not_address = (ir_code.raw_data >> 16) & 0xFF;
+      000021 16 05            [ 2]  136 	ldw	y, (0x05, sp)
+      000023 17 09            [ 2]  137 	ldw	(0x09, sp), y
+      000025 16 03            [ 2]  138 	ldw	y, (0x03, sp)
+      000027 17 07            [ 2]  139 	ldw	(0x07, sp), y
+      000029 7B 08            [ 1]  140 	ld	a, (0x08, sp)
+      00002B 6B 0B            [ 1]  141 	ld	(0x0b, sp), a
+                                    142 ;	src/main.c: 33: uint8_t not_command = ir_code.raw_data & 0xFF;
+      00002D 7B 0A            [ 1]  143 	ld	a, (0x0a, sp)
+      00002F 6B 0C            [ 1]  144 	ld	(0x0c, sp), a
+                                    145 ;	src/main.c: 35: if ((uint8_t)~ir_code.address == not_address && (uint8_t)~ir_code.command == not_command) {
+      000031 7B 01            [ 1]  146 	ld	a, (0x01, sp)
+      000033 97               [ 1]  147 	ld	xl, a
+      000034 43               [ 1]  148 	cpl	a
+      000035 11 0B            [ 1]  149 	cp	a, (0x0b, sp)
+      000037 26 26            [ 1]  150 	jrne	00102$
+      000039 7B 02            [ 1]  151 	ld	a, (0x02, sp)
+      00003B 95               [ 1]  152 	ld	xh, a
+      00003C 43               [ 1]  153 	cpl	a
+      00003D 11 0C            [ 1]  154 	cp	a, (0x0c, sp)
+      00003F 26 1E            [ 1]  155 	jrne	00102$
+                                    156 ;	src/main.c: 37: ir_code.address, ir_code.command, ir_code.raw_data);
+      000041 9E               [ 1]  157 	ld	a, xh
+      000042 0F 0B            [ 1]  158 	clr	(0x0b, sp)
+      000044 02               [ 1]  159 	rlwa	x
+      000045 4F               [ 1]  160 	clr	a
+      000046 01               [ 1]  161 	rrwa	x
+                                    162 ;	src/main.c: 36: printf("OK -> Addr: 0x%02X, Cmd: 0x%02X, Raw: 0x%08lX\n", 
+      000047 16 09            [ 2]  163 	ldw	y, (0x09, sp)
+      000049 90 89            [ 2]  164 	pushw	y
+      00004B 16 09            [ 2]  165 	ldw	y, (0x09, sp)
+      00004D 90 89            [ 2]  166 	pushw	y
+      00004F 88               [ 1]  167 	push	a
+      000050 7B 10            [ 1]  168 	ld	a, (0x10, sp)
+      000052 88               [ 1]  169 	push	a
+      000053 89               [ 2]  170 	pushw	x
+      000054 4Br00            [ 1]  171 	push	#<(___str_4+0)
+      000056 4Bs00            [ 1]  172 	push	#((___str_4+0) >> 8)
+      000058 CDr00r00         [ 4]  173 	call	_printf
+      00005B 5B 0A            [ 2]  174 	addw	sp, #10
+      00005D 20 B4            [ 2]  175 	jra	00110$
+      00005F                        176 00102$:
+                                    177 ;	src/main.c: 39: printf("Error -> Raw: 0x%08lX\n", ir_code.raw_data);
+      00005F 1E 09            [ 2]  178 	ldw	x, (0x09, sp)
+      000061 89               [ 2]  179 	pushw	x
+      000062 1E 09            [ 2]  180 	ldw	x, (0x09, sp)
+      000064 89               [ 2]  181 	pushw	x
+      000065 4Br2F            [ 1]  182 	push	#<(___str_5+0)
+      000067 4Bs00            [ 1]  183 	push	#((___str_5+0) >> 8)
+      000069 CDr00r00         [ 4]  184 	call	_printf
+      00006C 5B 06            [ 2]  185 	addw	sp, #6
+      00006E 20 A3            [ 2]  186 	jra	00110$
+                                    187 ;	src/main.c: 44: }
+      000070 5B 0C            [ 2]  188 	addw	sp, #12
+      000072 81               [ 4]  189 	ret
+                                    190 	.area CODE
+                                    191 	.area CONST
+                                    192 	.area CONST
+      000000                        193 ___str_4:
+      000000 4F 4B 20 2D 3E 20 41   194 	.ascii "OK -> Addr: 0x%02X, Cmd: 0x%02X, Raw: 0x%08lX"
+             64 64 72 3A 20 30 78
+             25 30 32 58 2C 20 43
+             6D 64 3A 20 30 78 25
+             30 32 58 2C 20 52 61
+             77 3A 20 30 78 25 30
+             38 6C 58
+      00002D 0A                     195 	.db 0x0a
+      00002E 00                     196 	.db 0x00
+                                    197 	.area CODE
+                                    198 	.area CONST
+      00002F                        199 ___str_5:
+      00002F 45 72 72 6F 72 20 2D   200 	.ascii "Error -> Raw: 0x%08lX"
+             3E 20 52 61 77 3A 20
+             30 78 25 30 38 6C 58
+      000044 0A                     201 	.db 0x0a
+      000045 00                     202 	.db 0x00
+                                    203 	.area CODE
+                                    204 	.area CONST
+      000046                        205 ___str_6:
+      000046 0A                     206 	.db 0x0a
+      000047 0A                     207 	.db 0x0a
+      000048 53 54 4D 38 53 20 4D   208 	.ascii "STM8S Modular IR Receiver"
+             6F 64 75 6C 61 72 20
+             49 52 20 52 65 63 65
+             69 76 65 72
+      000061 0A                     209 	.db 0x0a
+      000062 2D 2D 2D 2D 2D 2D 2D   210 	.ascii "-------------------------"
+             2D 2D 2D 2D 2D 2D 2D
+             2D 2D 2D 2D 2D 2D 2D
+             2D 2D 2D 2D
+      00007B 00                     211 	.db 0x00
+                                    212 	.area CODE
+                                    213 	.area INITIALIZER
+                                    214 	.area CABS (ABS)

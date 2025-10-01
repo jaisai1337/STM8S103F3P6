@@ -1,0 +1,32 @@
+XH3
+H B areas 3 global symbols
+M uart
+O -mstm8
+S .__.ABS. Def000000
+A _CODE size 0 flags 0 addr 0
+A DATA size 0 flags 0 addr 0
+A INITIALIZED size 0 flags 0 addr 0
+A DABS size 0 flags 8 addr 0
+A HOME size 0 flags 0 addr 0
+A GSINIT size 0 flags 0 addr 0
+A GSFINAL size 0 flags 0 addr 0
+A CONST size 0 flags 0 addr 0
+A INITIALIZER size 0 flags 0 addr 0
+A CODE size 2B flags 0 addr 0
+S _putchar Def000015
+S _uart_init Def000000
+A CABS size 0 flags 8 addr 0
+T 00 00 00
+R 00 00 00 09
+T 00 00 00 72 1A 50 11 72 1A 50 12 35 03 52 33 35
+R 00 00 00 09
+T 00 00 0D 68 52 32 72 16 52 35 81
+R 00 00 00 09
+T 00 00 15
+R 00 00 00 09
+T 00 00 15 A3 00 0A 26 07 89 AE 00 0D AD F5 85
+R 00 00 00 09
+T 00 00 21
+R 00 00 00 09
+T 00 00 21 C6 52 30 2A FB 9F C7 52 31 81
+R 00 00 00 09
