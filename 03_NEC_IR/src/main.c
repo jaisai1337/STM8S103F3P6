@@ -1,6 +1,6 @@
 #include "stm8s103f3p6.h"
 #include <stdio.h>
-
+//Working _v1
 // -- Configuration --
 #define IR_PIN_MASK (1 << 3) // IR sensor connected to PD3
 
